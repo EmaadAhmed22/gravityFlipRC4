@@ -147,4 +147,8 @@ public class PlayerMovement : MonoBehaviour
         Gizmos.color = isGrounded ? Color.green : Color.red;
         Gizmos.DrawRay(origin, checkDir * (groundCheckDistance + 0.05f));
     }
+    public void SetForwardSpeed(float speed)
+    {
+        autoForwardSpeed = speed;
+    }
 }
