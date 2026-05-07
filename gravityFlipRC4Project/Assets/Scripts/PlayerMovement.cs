@@ -11,6 +11,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 12f;
     [SerializeField] private float deceleration = 10f;
+    [Tooltip("Constant forward speed (Z+). Player steers left/right with A/D only.")]
+    [SerializeField] private float autoForwardSpeed = 8f;
 
     [Header("Gravity Settings")]
     [SerializeField] private float gravityStrength = 20f;
@@ -26,7 +28,6 @@ public class PlayerMovement : MonoBehaviour
     private bool isGravityFlipped = false;
     private bool isGrounded = false;
     private float lastFlipTime = -999f;
-    private Vector3 currentVelocity;
 
     // Events for GameManager / UI
     public System.Action OnGravityFlipped;
@@ -94,21 +95,15 @@ public class PlayerMovement : MonoBehaviour
     private void HandleMovement()
     {
         float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
 
-        Vector3 inputDir = new Vector3(horizontal, 0f, vertical).normalized;
-        Vector3 targetVelocity = inputDir * moveSpeed;
+        // Auto-forward: Z velocity is always locked to autoForwardSpeed.
+        // Player can only steer left/right with A/D.
+        float targetX = horizontal * moveSpeed;
+        float rate = Mathf.Abs(horizontal) > 0.1f ? acceleration : deceleration;
 
-        // Accelerate toward target, decelerate when no input
-        float rate = inputDir.magnitude > 0.1f ? acceleration : deceleration;
+        float newX = Mathf.MoveTowards(rb.linearVelocity.x, targetX, rate * Time.fixedDeltaTime);
 
-        currentVelocity = Vector3.MoveTowards(
-            new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z),
-            targetVelocity,
-            rate * Time.fixedDeltaTime
-        );
-
-        rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 9);
+        rb.linearVelocity = new Vector3(newX, rb.linearVelocity.y, autoForwardSpeed);
     }
 
     // ─── Ground Check ─────────────────────────────────────────────────────────
@@ -132,6 +127,9 @@ public class PlayerMovement : MonoBehaviour
     public bool IsGrounded => isGrounded;
     public bool IsGravityFlipped => isGravityFlipped;
 
+    /// <summary>Called by GameManager to ramp difficulty over time.</summary>
+    public void SetForwardSpeed(float speed) => autoForwardSpeed = speed;
+
     /// <summary>Called by GameManager to freeze the player (e.g. on death/win).</summary>
     public void SetMovementEnabled(bool enabled)
     {
@@ -146,9 +144,5 @@ public class PlayerMovement : MonoBehaviour
         Vector3 origin = groundCheckPoint != null ? groundCheckPoint.position : transform.position;
         Gizmos.color = isGrounded ? Color.green : Color.red;
         Gizmos.DrawRay(origin, checkDir * (groundCheckDistance + 0.05f));
-    }
-    public void SetForwardSpeed(float speed)
-    {
-        autoForwardSpeed = speed;
     }
 }
