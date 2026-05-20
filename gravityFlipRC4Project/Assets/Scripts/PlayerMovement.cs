@@ -71,7 +71,7 @@ public class PlayerMovement : MonoBehaviour
         isGravityFlipped = !isGravityFlipped;
         lastFlipTime = Time.time;
 
-        // Kill vertical momentum on flip for snappy feel
+        // Kill vertical momentum then add a kick away from the surface
         Vector3 vel = rb.linearVelocity;
         vel.y = 0f;
         rb.linearVelocity = vel;
